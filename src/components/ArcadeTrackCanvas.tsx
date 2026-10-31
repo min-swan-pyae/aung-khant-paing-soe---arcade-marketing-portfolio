@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { arcadeSound } from '../utils/audio';
-import { StorageService } from '../utils/storage';
 import { Volume2, VolumeX, Trophy, RefreshCw, RotateCcw } from 'lucide-react';
 
 interface ArcadeTrackProps {
@@ -28,6 +27,8 @@ interface Token {
   collected: boolean;
   pulse: number;
 }
+
+const TOKEN_LABELS = ['$', 'ROI', 'CTR', 'GA4', 'SEO', 'KOL', 'CPC', 'ROAS'];
 
 export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboard, onScoreEarned }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -58,6 +59,7 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
     tokens: [] as Token[],
     scrollOffset: 0,
     lastScrollY: 0,
+    worldX: 0,
     trackWidth: 2000,
   });
 
@@ -114,11 +116,11 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
       p.isAttacking = true;
       p.attackTimer = 25;
       arcadeSound.playAttack();
-      setScore(s => s + 50);
+      setScore(s => s + 25);
       // Spawn Hadouken projectile
       p.tokens.push({
         id: Date.now(),
-        x: p.x + 35,
+        x: p.worldX + p.x + 35,
         y: p.y + 40,
         type: 'hadouken',
         label: 'ROI',
@@ -147,9 +149,18 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
     p.particles = [];
     p.scrollOffset = 0;
     p.lastScrollY = window.scrollY;
+    p.worldX = 0;
+    const resetWorldX = 0;
+    let tokenIndex = 0;
+    p.tokens = p.tokens.filter(token => token.type !== 'hadouken');
     p.tokens.forEach(token => {
+      token.x = resetWorldX + 260 + tokenIndex * 170 + Math.random() * 50;
+      token.y = Math.random() > 0.4 ? 25 : 65;
+      token.type = tokenIndex % 5 === 0 ? 'boost' : 'coin';
+      token.label = TOKEN_LABELS[tokenIndex % TOKEN_LABELS.length];
       token.collected = false;
-      if (token.type === 'hadouken') token.collected = true;
+      token.pulse = Math.random() * Math.PI;
+      tokenIndex++;
     });
     setCoins(0);
     setScore(0);
@@ -207,14 +218,13 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
   // Initialize track tokens
   useEffect(() => {
     const tokens: Token[] = [];
-    const labels = ['$', 'ROI', 'CTR', 'GA4', 'SEO', 'KOL', 'CPC', 'ROAS'];
     for (let i = 0; i < 35; i++) {
       tokens.push({
         id: i,
         x: 300 + i * 180 + (Math.random() - 0.5) * 60,
         y: Math.random() > 0.4 ? 25 : 65, // in air or on ground
         type: i % 5 === 0 ? 'boost' : 'coin',
-        label: labels[i % labels.length],
+        label: TOKEN_LABELS[i % TOKEN_LABELS.length],
         collected: false,
         pulse: Math.random() * Math.PI,
       });
@@ -262,8 +272,15 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
       }
 
       // Horizontal position shifts dynamically with scroll + auto glide
-      const currentWorldX = (p.scrollOffset * 1.5 + frameCount * 1.2) % 6000;
+      p.worldX += 1.2;
+      const currentWorldX = p.scrollOffset * 1.5 + p.worldX;
       p.runFrame = Math.floor(frameCount / 6) % 4;
+
+      // Driving itself earns points, so the run continues to progress without
+      // requiring boosts or pickups.
+      if (frameCount % 30 === 0) {
+        setScore(s => s + 10);
+      }
 
       // Clear canvas
       ctx.clearRect(0, 0, width, height);
@@ -296,23 +313,55 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
 
       // 2. Render & Check Tokens / Boost Pads
       p.tokens.forEach(token => {
+        if (token.type === 'hadouken' && token.collected) return;
+
         if (token.type === 'hadouken') {
           token.x += 8;
+          const projectileX = token.x - currentWorldX;
+          if (projectileX > width + 40) {
+            token.collected = true;
+            return;
+          }
+
+          // Fighter attacks can collect nearby marketing tokens for a bonus.
+          p.tokens.forEach(target => {
+            if (target === token || target.collected || target.type === 'hadouken') return;
+            const targetScreenX = target.x - currentWorldX;
+            if (targetScreenX > -50 && targetScreenX < width + 50 && Math.abs(targetScreenX - projectileX) < 24) {
+              target.collected = true;
+              arcadeSound.playCoin();
+              setScore(s => s + 150);
+              if (target.type === 'coin') setCoins(c => c + 1);
+            }
+          });
+
           ctx.fillStyle = '#38bdf8';
           ctx.shadowColor = '#06b6d4';
           ctx.shadowBlur = 12;
           ctx.beginPath();
-          ctx.arc(token.x, groundY - token.y, 10, 0, Math.PI * 2);
+          ctx.arc(projectileX, groundY - token.y, 10, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 9px "Press Start 2P", monospace';
-          ctx.fillText('ROI', token.x - 8, groundY - token.y + 3);
+          ctx.fillText('ROI', projectileX - 8, groundY - token.y + 3);
           ctx.shadowBlur = 0;
           return;
         }
 
-        const screenX = (token.x - currentWorldX) % width;
-        const normalizedX = screenX < -50 ? screenX + width : screenX;
+        const screenX = token.x - currentWorldX;
+
+        // Recycle tokens after they leave the screen to keep the track endless.
+        if (screenX < -100) {
+          token.x = currentWorldX + width + 180 + Math.random() * 420;
+          token.collected = false;
+          token.type = Math.random() < 0.8 ? 'coin' : 'boost';
+          token.label = TOKEN_LABELS[Math.floor(Math.random() * TOKEN_LABELS.length)];
+          token.y = Math.random() > 0.4 ? 25 : 65;
+          return;
+        }
+        if (screenX > width + 50) return;
+
+        const normalizedX = screenX;
         const screenY = groundY - token.y - 10;
 
         token.pulse += 0.05;
@@ -576,8 +625,8 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
             <span className="text-slate-300 font-bold tabular-nums">{coins} COINS</span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-2 text-slate-400">
-            <span>TRACK:</span>
+          <div className="hidden sm:flex items-center gap-2 text-slate-400" title="Scroll the page to drive farther through the portfolio track">
+            <span>PAGE DRIVE:</span>
             <div className="w-24 h-2 bg-slate-800 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-cyan-500 to-amber-400 transition-all duration-150" 
@@ -594,10 +643,10 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
           <span>Jump</span>
           <span className="text-slate-600">·</span>
           <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700">F</span>
-          <span>{characterMode === 'kart' ? 'Nitro Boost' : 'Hadouken'}</span>
+          <span>{characterMode === 'kart' ? 'Nitro Boost' : 'Pulse Strike'}</span>
           <span className="text-slate-600">·</span>
-          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700">SCROLL</span>
-          <span>Drive Track</span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-200 border border-slate-700">PAGE SCROLL</span>
+          <span>Drive + earn</span>
         </div>
 
         {/* Right HUD: Controls & Toggles */}
@@ -606,7 +655,7 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
           <button
             onClick={handleToggleMode}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs transition-colors"
-            title="Switch Character (Key C)"
+            title="Switch between Kart and Fighter (Key C)"
           >
             <RefreshCw className="w-3 h-3 text-cyan-400" />
             <span className="font-medium">
@@ -668,6 +717,10 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
             JUMP
           </button>
         </div>
+      </div>
+      <div className="px-4 py-2 border-t border-slate-800/80 bg-[#090a12] text-[10px] sm:text-xs text-slate-400 font-mono">
+        Drive through the portfolio: collect marketing metrics for points. Page scrolling moves the track,
+        normal driving earns distance points, and Fighter Pulse Strike can clear nearby tokens for bonus points.
       </div>
     </div>
   );

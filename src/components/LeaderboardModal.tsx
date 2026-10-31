@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { LeaderboardEntry } from '../types/portfolio';
 import { StorageService } from '../utils/storage';
-import { ApiService } from '../utils/api';
 import { arcadeSound } from '../utils/audio';
 import { Trophy, X, Medal, Sparkles, UserPlus } from 'lucide-react';
 
@@ -31,11 +30,6 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
       setInitials('');
       setSubmitted(false);
       setError('');
-      if (ApiService.isEnabled()) {
-        ApiService.getLeaderboard()
-          .then(setEntries)
-          .catch(() => setError('Online records are unavailable. Try again later.'));
-      }
     }
   }, [isOpen]);
 
@@ -56,9 +50,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
     };
 
     try {
-      const updated = ApiService.isEnabled()
-        ? await ApiService.addLeaderboardEntry(entry)
-        : StorageService.addLeaderboardEntry(entry);
+      const updated = StorageService.addLeaderboardEntry(entry);
       arcadeSound.playCoin();
       setEntries(updated);
       setSubmitted(true);

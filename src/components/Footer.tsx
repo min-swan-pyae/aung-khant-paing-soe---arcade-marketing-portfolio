@@ -1,12 +1,8 @@
 import React from 'react';
-import { Lock, ArrowUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { arcadeSound } from '../utils/audio';
 
-interface FooterProps {
-  onOpenAdmin: () => void;
-}
-
-export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
+export const Footer: React.FC = () => {
   const scrollToTop = () => {
     arcadeSound.playSelect();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,18 +36,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenAdmin }) => {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => {
-              arcadeSound.playSelect();
-              onOpenAdmin();
-            }}
-            className="flex items-center gap-1.5 text-slate-500 hover:text-cyan-400 transition-colors"
-            title="Admin Dashboard"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>Admin PIN</span>
-          </button>
-
           <button
             onClick={scrollToTop}
             className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors border border-slate-800"

@@ -27,15 +27,6 @@ export interface LeaderboardEntry {
   timestamp: number;
 }
 
-export interface AnalyticsTelemetry {
-  pageViews: number;
-  totalJumps: number;
-  simulationsRun: number;
-  contactClicks: number;
-  messagesSent: number;
-  lastVisitTimestamp: number;
-}
-
 export interface ContactMessage {
   id: string;
   name: string;

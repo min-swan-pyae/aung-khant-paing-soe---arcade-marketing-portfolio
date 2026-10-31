@@ -74,8 +74,6 @@ export const ArcadeTrackCanvas: React.FC<ArcadeTrackProps> = ({ onOpenLeaderboar
       p.vy = p.jumpForce;
       p.isGrounded = false;
       arcadeSound.playJump();
-      StorageService.incrementTelemetry('totalJumps');
-
       // Jump dust particles
       for (let i = 0; i < 8; i++) {
         p.particles.push({

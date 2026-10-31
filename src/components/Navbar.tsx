@@ -1,13 +1,12 @@
 import React from 'react';
 import { arcadeSound } from '../utils/audio';
-import { Lock, Volume2, VolumeX, Flame } from 'lucide-react';
+import { Volume2, VolumeX, Flame } from 'lucide-react';
 
 interface NavbarProps {
-  onOpenAdmin: () => void;
   onContactClick: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, onContactClick }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onContactClick }) => {
   const [isMuted, setIsMuted] = React.useState(arcadeSound.getMuted());
 
   const handleToggleSound = () => {
@@ -66,19 +65,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAdmin, onContactClick }) =
             aria-label="Toggle Sound"
           >
             {isMuted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
-          </button>
-
-          {/* Admin PIN Access */}
-          <button
-            onClick={() => {
-              arcadeSound.playSelect();
-              onOpenAdmin();
-            }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition-colors"
-            title="Open Admin Dashboard"
-            aria-label="Admin Dashboard"
-          >
-            <Lock className="w-4 h-4" />
           </button>
 
           {/* Primary CTA */}

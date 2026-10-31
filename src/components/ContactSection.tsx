@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { StorageService } from '../utils/storage';
-import { ApiService } from '../utils/api';
 import { arcadeSound } from '../utils/audio';
 import { Mail, Phone, MessageSquare, Linkedin, MapPin, Send, CheckCircle2, Copy, Check } from 'lucide-react';
 
@@ -12,32 +11,14 @@ export const ContactSection: React.FC = () => {
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
-  const [submitError, setSubmitError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !email || !message) return;
 
-    const contactMessage = {
-      name,
-      email,
-      company,
-      budget,
-      message,
-    };
-
-    try {
-      if (ApiService.isEnabled()) {
-        await ApiService.addContactMessage(contactMessage);
-      } else {
-        StorageService.addMessage(contactMessage);
-      }
-      arcadeSound.playCoin();
-      setSubmitError('');
-      setSubmitted(true);
-    } catch {
-      setSubmitError('The message could not be sent. Please try again.');
-    }
+    StorageService.addMessage({ name, email, company, budget, message });
+    arcadeSound.playCoin();
+    setSubmitted(true);
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -175,7 +156,6 @@ export const ContactSection: React.FC = () => {
 
           {!submitted ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              {submitError && <p className="text-xs text-rose-400 font-mono">{submitError}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-slate-300 block mb-1.5 font-medium">Your Name *</label>

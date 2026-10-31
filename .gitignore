@@ -5,16 +5,11 @@ coverage/
 .DS_Store
 *.log
 .env*
-!.env.example
-.env.example
 .aistudio/
 .vercel/
-supabase/.temp/
 *.pem
 *.key
 *.crt
 credentials.json
 service-account*.json
 DEPLOYMENT.md
-PRODUCTION-ARCHITECTURE-SPEC.md
-supabase/migrations/20261101000000_initial_schema.sql

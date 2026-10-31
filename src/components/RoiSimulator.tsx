@@ -59,7 +59,6 @@ export const RoiSimulator: React.FC<RoiSimulatorProps> = ({ onContactClick }) =>
 
   const handleSliderChange = (setter: React.Dispatch<React.SetStateAction<number>>, value: number) => {
     setter(value);
-    StorageService.incrementTelemetry('simulationsRun');
   };
 
   return (
@@ -331,7 +330,6 @@ export const RoiSimulator: React.FC<RoiSimulatorProps> = ({ onContactClick }) =>
             <button
               onClick={() => {
                 arcadeSound.playJump();
-                StorageService.incrementTelemetry('contactClicks');
                 onContactClick();
               }}
               className="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-semibold text-xs transition-colors shrink-0 flex items-center gap-1.5 shadow-lg shadow-amber-500/20"

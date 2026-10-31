@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { HeroSection } from './components/HeroSection';
 import { ArcadeTrackCanvas } from './components/ArcadeTrackCanvas';
@@ -14,7 +14,6 @@ import { ContactSection } from './components/ContactSection';
 import { Footer } from './components/Footer';
 import { ProjectModal } from './components/ProjectModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
-import { AdminModal } from './components/AdminModal';
 import { ProjectItem } from './types/portfolio';
 import { StorageService } from './utils/storage';
 import { arcadeSound } from './utils/audio';
@@ -23,26 +22,16 @@ export default function App() {
   const [projects, setProjects] = useState<ProjectItem[]>(() => StorageService.getProjects());
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
 
   // Live game telemetry
   const [currentScore, setCurrentScore] = useState(0);
   const [currentCoins, setCurrentCoins] = useState(0);
   const [currentMode, setCurrentMode] = useState<'kart' | 'fighter'>('kart');
 
-  useEffect(() => {
-    // Record page view on load
-    StorageService.incrementTelemetry('pageViews');
-  }, []);
-
   const handleScoreUpdate = (score: number, coins: number, mode: 'kart' | 'fighter') => {
     setCurrentScore(score);
     setCurrentCoins(coins);
     setCurrentMode(mode);
-  };
-
-  const handleProjectsUpdated = () => {
-    setProjects(StorageService.getProjects());
   };
 
   const scrollToExperience = () => {
@@ -59,7 +48,6 @@ export default function App() {
     <div className="min-h-screen bg-[#0a0a0f] text-slate-100 flex flex-col relative selection:bg-amber-400 selection:text-black">
       {/* Top Navigation */}
       <Navbar
-        onOpenAdmin={() => setIsAdminOpen(true)}
         onContactClick={scrollToContact}
       />
 
@@ -97,7 +85,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer onOpenAdmin={() => setIsAdminOpen(true)} />
+      <Footer />
 
       {/* Modals */}
       <ProjectModal
@@ -113,11 +101,6 @@ export default function App() {
         currentMode={currentMode}
       />
 
-      <AdminModal
-        isOpen={isAdminOpen}
-        onClose={() => setIsAdminOpen(false)}
-        onProjectsUpdated={handleProjectsUpdated}
-      />
     </div>
   );
 }

@@ -1,11 +1,9 @@
-import { ProjectItem, LeaderboardEntry, AnalyticsTelemetry, ContactMessage } from '../types/portfolio';
+import { ProjectItem, LeaderboardEntry, ContactMessage } from '../types/portfolio';
 
 const STORAGE_KEYS = {
   PROJECTS: 'akp_portfolio_projects_v1',
   LEADERBOARD: 'akp_portfolio_leaderboard_v1',
-  TELEMETRY: 'akp_portfolio_telemetry_v1',
   MESSAGES: 'akp_portfolio_messages_v1',
-  ADMIN_PIN: 'akp_portfolio_admin_pin_v1',
 };
 
 export const INITIAL_PROJECTS: ProjectItem[] = [
@@ -171,37 +169,6 @@ export const StorageService = {
     return updated;
   },
 
-  getTelemetry(): AnalyticsTelemetry {
-    const defaultData: AnalyticsTelemetry = {
-      pageViews: 1248,
-      totalJumps: 4390,
-      simulationsRun: 324,
-      contactClicks: 89,
-      messagesSent: 14,
-      lastVisitTimestamp: Date.now()
-    };
-    if (typeof window === 'undefined') return defaultData;
-    try {
-      const saved = localStorage.getItem(STORAGE_KEYS.TELEMETRY);
-      if (saved) return JSON.parse(saved);
-    } catch {
-      // fallback
-    }
-    return defaultData;
-  },
-
-  incrementTelemetry(key: keyof AnalyticsTelemetry): AnalyticsTelemetry {
-    const data = this.getTelemetry();
-    if (typeof data[key] === 'number') {
-      (data[key] as number) += 1;
-    }
-    data.lastVisitTimestamp = Date.now();
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEYS.TELEMETRY, JSON.stringify(data));
-    }
-    return data;
-  },
-
   getMessages(): ContactMessage[] {
     if (typeof window === 'undefined') return [];
     try {
@@ -225,25 +192,13 @@ export const StorageService = {
     if (typeof window !== 'undefined') {
       localStorage.setItem(STORAGE_KEYS.MESSAGES, JSON.stringify(messages));
     }
-    this.incrementTelemetry('messagesSent');
     return newMsg;
-  },
-
-  getAdminPin(): string {
-    if (typeof window === 'undefined') return '1234';
-    return localStorage.getItem(STORAGE_KEYS.ADMIN_PIN) || '1234';
-  },
-
-  setAdminPin(pin: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(STORAGE_KEYS.ADMIN_PIN, pin);
   },
 
   resetAll(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem(STORAGE_KEYS.PROJECTS);
     localStorage.removeItem(STORAGE_KEYS.LEADERBOARD);
-    localStorage.removeItem(STORAGE_KEYS.TELEMETRY);
     localStorage.removeItem(STORAGE_KEYS.MESSAGES);
   }
 };
